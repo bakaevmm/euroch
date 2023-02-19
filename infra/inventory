@@ -1,0 +1,11 @@
+[gitlab-server]
+gitlab-server ansible_host=127.0.0.1 ansible_port=2222 ansible_private_key_file=.vagrant/machines/pam/virtualbox/private_key
+
+[gitlab-worker]
+gitlab-worker ansible_host=127.0.0.1 ansible_port=2200 ansible_private_key_file=.vagrant/machines/pam/virtualbox/private_key
+
+[app-server]
+app-server ansible_host=127.0.0.1 ansible_port=2201 ansible_private_key_file=.vagrant/machines/pam/virtualbox/private_key
+
+[app-client]
+app-client ansible_host=127.0.0.1 ansible_port=2202 ansible_private_key_file=.vagrant/machines/pam/virtualbox/private_key

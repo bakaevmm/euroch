@@ -1,0 +1,6 @@
+---
+- hosts:
+    - app
+    - test
+  roles:
+    - deploy-app

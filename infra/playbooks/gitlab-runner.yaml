@@ -1,0 +1,43 @@
+---
+- hosts:
+   - gitlab-worker
+  become: true
+  vars: 
+    runner_token: ###runner_token###
+  tasks:
+  - name: install gitlab repo
+    shell: "curl -L \"https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh\" | sudo bash"
+
+  - name: install gitlab runner
+    yum:
+      name: gitlab-runner
+      state: present
+
+  - name: add user gitlab to docker group
+    user:
+      name: gitlab-runner
+      groups: docker
+      append: yes
+
+  - name: register runner
+    shell: "gitlab-runner register -n --url http://192.168.11.150/ --registration-token {{ runner_token }} --executor shell --description \"Exness Runner\""
+
+  - name: install ansible
+    yum:
+      name: ansible
+      state: present
+
+  - name: create ssh dir
+    file: 
+      path: /home/gitlab-runner/.ssh
+      state: directory
+      owner: gitlab-runner
+      group: gitlab-runner
+
+  - name: add gitlab-runner private key
+    copy:
+      src: ./files/id_rsa
+      dest: /home/gitlab-runner/.ssh/id_rsa
+      owner: gitlab-runner
+      group: gitlab-runner
+      mode: '0600'

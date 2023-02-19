@@ -1,0 +1,33 @@
+---
+- name: deploy server
+  docker_container:
+    name: exness-server
+    image: bakaevmm/exness-server:{{ image_tag }}
+    ports:
+      - "5555:5555/tcp"
+    state: started
+    recreate: yes
+  tags: deploy-server
+
+- name: create data dir
+  file: 
+    path: /app/client_data
+    state: directory
+  tags: deploy-client
+
+- name: deploy client
+  docker_container:
+    name: exness-client
+    image: bakaevmm/exness-client:{{ image_tag }}
+    volumes: 
+      - "/app/client_data:/app/data:rw"
+    network_mode: "{{ network_mode }}"
+    etc_hosts:
+       app-server: 192.168.11.160
+       app-client: 192.168.11.165
+    env: 
+      HOST_SRV_ARG: "{{ host_srv_arg }}"
+      PORT_SRV_ARG: "{{ port_srv_arg }}"
+    state: started
+    recreate: yes
+  tags: deploy-client

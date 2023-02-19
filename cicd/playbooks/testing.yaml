@@ -1,0 +1,24 @@
+---
+- hosts:
+   - app
+  become: true
+  tasks:
+  - name: test remout server vm
+    script: ../test/test-server.sh ${SERVER_IMAGE_NAME} ${SERVER_PORT}
+    register: server_result
+    tags: test-server
+
+  - name: print result testing
+    debug: 
+      var: server_result.stdout_lines
+    tags: test-server
+
+  - name: test remout client vm
+    script: ../test/test-client.sh ${CLIENT_IMAGE_NAME}
+    register: client_result
+    tags: test-client
+
+  - name: print result testing
+    debug: 
+      var: client_result.stdout_lines
+    tags: test-client

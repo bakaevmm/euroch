@@ -1,0 +1,4 @@
+---
+- import_playbook: common.yaml
+- import_playbook: gitlab-server.yaml
+- import_playbook: gitlab-runner.yaml

@@ -1,0 +1,4 @@
+image_tag: latest
+network_mode: none
+host_srv_arg: "app-server"
+port_srv_arg: "5555"

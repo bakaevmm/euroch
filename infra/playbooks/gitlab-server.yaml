@@ -1,0 +1,32 @@
+---
+- hosts:
+   - gitlab-server
+  vars:
+    root_passwd: !vault |
+                          $ANSIBLE_VAULT;1.1;AES256
+                          62383963616439343636353361353130623030316536393663316435313935643636343064303862
+                          6233646635616439643133323637373464663539343561330a343239343237353165303865386638
+                          34373239323436303630366462663631373163373064373534613938643362356166353165333162
+                          3365633466373539320a366263633162613639346139633038303035363034316533356338613132
+                          3963
+  become: true
+  tasks:
+  - name: start gitlab container
+    docker_container:
+      name: gitlab-server
+      image: gitlab/gitlab-ce:latest
+      volumes:
+        - '/srv/gitlab/config:/etc/gitlab'
+        - '/srv/gitlab/logs:/var/log/gitlab'
+        - '/srv/gitlab/data:/var/opt/gitlab'
+      ports:
+        - "80:80/tcp"
+        - "443:443/tcp"
+        - "2223:22/tcp"
+      env:
+        GITLAB_ROOT_PASSWORD: "{{ root_passwd }}"
+        GITLAB_OMNIBUS_CONFIG: |
+          external_url 'http://192.168.11.150'
+      state: started
+      restart: yes
+

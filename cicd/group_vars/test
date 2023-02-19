@@ -1,0 +1,2 @@
+network_mode: host
+host_srv_arg: localhost

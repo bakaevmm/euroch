@@ -1,0 +1,105 @@
+stages:
+  - analysis
+  - build
+  - test
+  - deploy
+  - prod testing
+  - monitoring
+
+variables:
+  GIT_STRATEGY: clone
+  REGISTRY_USER: bakaevmm
+  REGISTRY_TOKEN: 3bcc75b2-ef00-4241-9812-66f1dafdb6c1
+  SERVER_IMAGE_NAME: ${REGISTRY_USER}/exness-server:${CI_COMMIT_SHORT_SHA}
+  CLIENT_IMAGE_NAME: ${REGISTRY_USER}/exness-client:${CI_COMMIT_SHORT_SHA}
+  SERVER_PORT: "5555"
+
+analysis code:
+  stage:  analysis
+  before_script:
+    - cd cicd/test
+    - pip install -r requirements.txt
+  script:
+    - cd ../../app
+    - python -m pylint --exit-zero provider/*.py 
+    - python -m pylint --exit-zero client/*.py 
+
+build server:
+  stage: build
+  before_script: 
+    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
+  script:
+    - cd app/provider
+    - docker build -t ${SERVER_IMAGE_NAME} ./
+    - docker push ${SERVER_IMAGE_NAME}
+
+build client:
+  stage: build
+  before_script: 
+    - docker login -u ${REGISTRY_USER} -p ${REGISTRY_TOKEN}
+  script:
+    - cd app/client
+    - docker build -t ${CLIENT_IMAGE_NAME} ./
+    - docker push ${CLIENT_IMAGE_NAME}
+
+deploy to test:
+  stage: test
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/deploy.yaml --limit test -e image_tag=${CI_COMMIT_SHORT_SHA} --tags deploy-server
+    - ansible-playbook playbooks/deploy.yaml --limit test -e image_tag=${CI_COMMIT_SHORT_SHA} --tags deploy-client
+  needs:
+    - build server
+    - build client
+
+testing:
+  stage: test
+  script:
+    - cd cicd/test
+    - sh ./test-server.sh ${SERVER_IMAGE_NAME} ${SERVER_PORT}
+    - sh ./test-client.sh ${CLIENT_IMAGE_NAME}
+  after_script:
+    - docker rm -f $(docker ps -a -q)
+  needs:
+    - deploy to test
+
+deploy server to prod: 
+  stage: deploy
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/deploy.yaml --limit app-server -e image_tag=${CI_COMMIT_SHORT_SHA} -u vagrant --tags deploy-server
+  when: manual
+  needs:
+    - testing
+
+deploy client to prod: 
+  stage: deploy
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/deploy.yaml --limit app-client -e image_tag=${CI_COMMIT_SHORT_SHA} -u vagrant --tags deploy-client
+  when: manual
+  needs:
+    - testing
+
+test prod server:
+  stage: prod testing
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/testing.yaml --limit app-server --tags test-server
+  needs:
+    - deploy server to prod
+
+test prod client:
+  stage: prod testing
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/testing.yaml --limit app-client --tags test-client
+  needs:
+    - deploy client to prod
+
+deploy monitoring to prod: 
+  stage: monitoring
+  script:
+    - cd cicd
+    - ansible-playbook playbooks/deploy-monitoring.yaml
+  when: manual

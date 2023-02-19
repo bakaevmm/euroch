@@ -1,0 +1,17 @@
+---
+- name: start cadvisor container
+  docker_container:
+    name: cadvisor
+    image: "google/cadvisor:{{ cadvisor_version }}"
+    volumes:
+      - "/:/rootfs:ro"
+      - "/var/run:/var/run:ro"
+      - "/sys:/sys:ro"
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+      - "/var/lib/docker:/var/lib/docker:ro"
+      - "/dev/disk/:/dev/disk:ro"
+    ports:
+      - "9101:8080"
+    state: started
+    recreate: yes
+  tags: cadvisor-exporter

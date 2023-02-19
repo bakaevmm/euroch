@@ -1,0 +1,4 @@
+- include_tasks: node-exporter.yaml
+  tags: node-exporter
+- include_tasks: cadvisor-exporter.yaml
+  tags: cadvisor-exporter
